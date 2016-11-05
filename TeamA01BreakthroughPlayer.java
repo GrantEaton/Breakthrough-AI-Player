@@ -5,14 +5,17 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 
 import connect4.Connect4State;
-import connect4.MiniMaxConnect4Player.ScoredConnect4Move;
 import game.GameMove;
 import game.GamePlayer;
 import game.GameState;
+import game.GameState.Who;
 import game.Util;
 
 public class TeamA01BreakthroughPlayer extends GamePlayer {
 
+	//Maxscore for connect4 is 12*total board spots +1, so i (grant) mimicked that... may need to change,
+	//i dont know where 12 came from exactly
+	public static final int MAX_SCORE = 12*49 + 1;
 	public final int MAX_DEPTH = 50;
 	public int depthLimit;
 	protected ScoredBreakthroughMove[] mvStack;
@@ -47,25 +50,26 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		depthLimit = d;
 	}
 
+	//initializes the moveStack
 	public void init() {
 		mvStack = new ScoredBreakthroughMove[MAX_DEPTH];
 		for (int i = 0; i < MAX_DEPTH; i++) {
-			mvStack[i] = new ScoredBreakthroughMove(0,0,7,7,0.0);
+			mvStack[i] = new ScoredBreakthroughMove();
 		}
 	}
 
-	protected boolean terminalValue(GameState brd, ScoredBreakthroughMove mv) {
+	//checks if the board is solved
+	protected boolean terminalValue(BreakthroughState brd, ScoredBreakthroughMove mv) {
 		GameState.Status status = brd.getStatus();
 		boolean isTerminal = true;
 
-		if (status == GameState.Status.HOME_WIN) {
-			mv.set(0, MAX_SCORE);
-		} else if (status == GameState.Status.AWAY_WIN) {
-			mv.set(0, -MAX_SCORE);
-		} else if (status == GameState.Status.DRAW) {
-			mv.set(0, 0);
-		} else {
-			isTerminal = false;
+		for(int j=0; j<brd.N-1;j++){
+			if(brd.board[0][j]=='B'){
+				return true;
+			}
+			if(brd.board[brd.N-1][j]=='W'){
+				return true;
+			}
 		}
 		return isTerminal;
 	}
@@ -107,7 +111,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		return safe;
 	}
 
-	private void alphaBeta(Connect4State brd, int currDepth,
+	private void alphaBeta(BreakthroughState brd, int currDepth,
 			double alpha, double beta)
 	{
 		boolean toMaximize = (brd.getWho() == GameState.Who.HOME);
@@ -117,11 +121,15 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 
 		if (isTerminal) {
 			;
+			//if were at the depth, start building the "tree" of evaluation functions (done searching, 
 		} else if (currDepth == depthLimit) {
 			mvStack[currDepth].set(0, evalBoard(brd));
+			// else end recursion; its time to start comparing to pick a best move
 		} else {
+			//minimax stuff: make a temp move as our possible solution?
 			ScoredBreakthroughMove tempMv = new ScoredBreakthroughMove();
 
+			//set our best score found to neg infinity if home
 			double bestScore = (toMaximize ? 
 					Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
 			ScoredBreakthroughMove bestMove = mvStack[currDepth];
@@ -130,44 +138,49 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 			bestMove.set(0, bestScore);
 			GameState.Who currTurn = brd.getWho();
 
-			int [] columns = new int [COLS];
-			for (int j=0; j<COLS; j++) {
-				columns[j] = j;
-			}
-			shuffle(columns);
-			for (int i=0; i<Connect4State.NUM_COLS; i++) {
-				int c = columns[i];
-				if (brd.numInCol[c] < Connect4State.NUM_ROWS) {
-					tempMv.col = c;				// initialize move
-					brd.makeMove(tempMv);
 
-					alphaBeta(brd, currDepth+1, alpha, beta);  // Check out move
+			//shuffle(columns); //we got rid of this function, do we actually need it?
+			// iterate through all the positions on the board to check for our p
+			for (int r=0; r<brd.N-1; r++) {
+				for(int c=0; c<brd.N-1; c++){
+					if (brd.board[r][c] == currTurn) {   // if we found one of our players
 
-					// Undo move
-					brd.numInCol[c]--;
-					int row = brd.numInCol[c]; 
-					brd.board[row][c] = Connect4State.emptySym;
-					brd.numMoves--;
-					brd.status = GameState.Status.GAME_ON;
-					brd.who = currTurn;
 
-					// Check out the results, relative to what we've seen before
-					if (toMaximize && nextMove.score > bestMove.score) {
-						bestMove.set(c, nextMove.score);
-					} else if (!toMaximize && nextMove.score < bestMove.score) {
-						bestMove.set(c, nextMove.score);
-					}
 
-					// Update alpha and beta. Perform pruning, if possible.
-					if (toMinimize) {
-						beta = Math.min(bestMove.score, beta);
-						if (bestMove.score <= alpha || bestMove.score == -MAX_SCORE) {
-							return;
+						tempMv.startRow = 0;
+						tempMv.startCol =0;
+						tempMv.endingRow = 0;				// initialize move
+						tempMv.endingCol = 0;
+						brd.makeMove(tempMv);
+
+						alphaBeta(brd, currDepth+1, alpha, beta);  // Check out move
+
+						// Undo move
+						brd.numInCol[c]--;
+						int row = brd.numInCol[c]; 
+						brd.board[r][c] = BreakthroughState.emptySym;
+						brd.numMoves--;
+						brd.status = GameState.Status.GAME_ON;
+						brd.who = currTurn;
+
+						// if max, test next move to see if higher than our current best, if min, test next move to see if lower than best
+						if (toMaximize && nextMove.score > bestMove.score) {
+							bestMove.set(nextMove.startRow,nextMove.startCol, nextMove.endingRow,nextMove.endingCol, nextMove.score);
+						} else if (!toMaximize && nextMove.score < bestMove.score) {
+							bestMove.set(nextMove.startRow,nextMove.startCol, nextMove.endingRow,nextMove.endingCol, nextMove.score);
 						}
-					} else {
-						alpha = Math.max(bestMove.score, alpha);
-						if (bestMove.score >= beta || bestMove.score == MAX_SCORE) {
-							return;
+
+						// Update alpha and beta. Perform pruning, if possible.
+						if (toMinimize) {
+							beta = Math.min(bestMove.score, beta);
+							if (bestMove.score <= alpha || bestMove.score == -MAX_SCORE) {
+								return;
+							}
+						} else {
+							alpha = Math.max(bestMove.score, alpha);
+							if (bestMove.score >= beta || bestMove.score == MAX_SCORE) {
+								return;
+							}
 						}
 					}
 				}
@@ -175,22 +188,57 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		}
 	}
 
-	public GameMove getMove(GameState state, string lastMove)
-	{
+	//returns a list of scoredBreakthroughMoves
+	public ScoredBreakthroughMove[] getNextMoves(BreakthroughState brd, int curRow, int curCol){
 		
-		return //RETURN A GAME MOVE BASED ON A GLOBAL;
+		for(int j=0;j<2;j++){
+			if(){
+				
 
-
+			}
+		}
 	}
+
+	//called by the game to get our players next move (whatever alpha beta spits out)
+	public GameMove getMove(GameState brd, String lastMove)
+	{ 
+		alphaBeta((BreakthroughState)brd, 0, Double.NEGATIVE_INFINITY, 
+				Double.POSITIVE_INFINITY);
+		System.out.println(mvStack[0].score);
+		return mvStack[0];
+	}
+
+	//evaluation of the board
+	public static int evalBoard(BreakthroughState brd)
+	{ 
+		int score = eval(brd, BreakthroughState.homeSym) - eval(brd, BreakthroughState.awaySym);
+		if (Math.abs(score) > MAX_SCORE) {
+			System.err.println("Problem with eval");
+			System.exit(0);
+		}
+		return score;
+	}
+
+	//evaluation 
+	private static int eval(BreakthroughState brd, char who)
+	{
+		int cnt = 0;
+		for (int r=0; r<brd.N-1; r++) {
+			for (int c=0; c<brd.N-1; c++) {
+				if(brd.board[r][c] == who){ //NOTE: Grant's Edits: i dont know if this works for sure. 
+					//my goal is to count up the total of that player and return that #
+					cnt++;
+				}
+			}
+		}
+		return cnt;
+	}
+
 	public static void main(String [] args)
 	{
 		//TODO: CHANGE DEPTH LIMIT BASED ON TIME
 		GamePlayer p = new TeamA01BreakthroughPlayer("team A01 BT+",3);
 		p.compete(args);
 	}
-	@Override
-	public GameMove getMove(GameState state, String lastMv) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+
 }

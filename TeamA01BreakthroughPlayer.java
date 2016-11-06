@@ -58,7 +58,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		}
 	}
 
-	//checks if the board is complete
+	//checks if either side won
 	protected boolean terminalValue(BreakthroughState brd, ScoredBreakthroughMove mv) {
 		GameState.Status status = brd.getStatus();
 		boolean isTerminal = false;
@@ -74,6 +74,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		return isTerminal;
 	}
 
+	//dont know when this is used
 	public void messageFromOpponent(String m)
 	{ System.out.println(m); }
 	private boolean validSquare(BreakthroughState brd, int row, int col)
@@ -111,9 +112,6 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		return safe;
 	}
 
-	private void undoMove(BreakthroughState brd, int r, int c){
-
-	}
 
 	private void alphaBeta(BreakthroughState brd, int currDepth,
 			double alpha, double beta)
@@ -137,7 +135,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 			// else end recursion; its time to start comparing to pick a best move
 			mvStack[currDepth].set(0,0,0,0, evalBoard(brd));
 		} else {
-			//: make a temp move as our possible solution?
+			//zmuda's c4 code had a tempMove here, but I didnt see why it was needed
 			//ScoredBreakthroughMove tempMv = new ScoredBreakthroughMove();
 
 			//set our best score found to neg infinity if home
@@ -145,15 +143,19 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 					Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
 			ScoredBreakthroughMove bestMove = mvStack[currDepth];
 			ScoredBreakthroughMove nextMove = mvStack[currDepth+1];
-
+			
+			//not 100% sure why these values are 0 here, but thats how it was in the
+			//connect 4 code. I think we only care abt score
 			bestMove.set(0,0,0,0, bestScore);
 			GameState.Who currTurn = brd.getWho();
 			
+			//get the char of what player's move we are looking at (W or B)
 			char me = brd.who == GameState.Who.HOME ?
 					BreakthroughState.homeSym : BreakthroughState.awaySym;
-			System.out.println("me "+me);
-			//shuffle(columns); //we got rid of this function, do we actually need it?
-			// iterate through all the positions on the board to check for our p
+			
+			System.out.println("current player: "+me);
+
+			// iterate through all the positions on the board to check for our player (could be W or B)
 			for (int r=0; r<brd.N-1; r++) {
 				for(int c=0; c<brd.N-1; c++){
 					if (brd.board[r][c] == me) {   // if we found one of our players
@@ -161,9 +163,10 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 						//get the moves possible at this location
 						ArrayList<ScoredBreakthroughMove> listofMoves = getNextMoves(brd,r,c);
 						for(ScoredBreakthroughMove move : listofMoves){
-							System.out.println(brd.toString());
+							
 							brd.makeMove(move);
-
+							System.out.println("move: " + move.toString());
+							System.out.println(brd.toString());
 							alphaBeta(brd, currDepth+1, alpha, beta);  // Check out move
 
 							// Undo move
@@ -199,24 +202,29 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 	}
 
 	//returns a list of scoredBreakthroughMoves
+	//this is a function i (grant) made, almost all others were duplicates from other classes
 	public ArrayList<ScoredBreakthroughMove> getNextMoves(BreakthroughState brd, int curRow, int curCol){
-		System.out.println("current spot: row: "+curRow+ " col: "+ curCol);
+		System.out.println("Looking for moves from: row: "+curRow+ " col: "+ curCol);
 		ArrayList<ScoredBreakthroughMove> listofMoves = new ArrayList<>();
+		//char of who the opponent and home is
 		char me = brd.who == GameState.Who.HOME ?
 				BreakthroughState.homeSym : BreakthroughState.awaySym;
 		char opp = brd.who == GameState.Who.HOME ?
 				BreakthroughState.awaySym : BreakthroughState.homeSym;
+		
+		//if were home, were moving up the rows, away is moving down rows
 		int dir = brd.who == GameState.Who.HOME ? +1 : -1;
-		ScoredBreakthroughMove mv = new ScoredBreakthroughMove();
-		mv.startCol = curCol;
-		mv.startRow = curRow;
-		mv.endingRow = curRow+dir;
+		
+		int startCol = curCol;
+		int startRow = curRow;
+		int endingRow = curRow+dir;
 		//get move in front and to the left of us
 		if(curCol != 0){
-			mv.endingCol = curCol-1;
+			int endingCol = curCol-1;
 
 			//make a new state and make the move, then add it to list of moves
 			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
+			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol, endingRow, endingCol,0);
 			modifiedBrd.makeMove(mv);
 			mv.score = evalBoard(modifiedBrd);
 			//check if next move is ok before adding 
@@ -227,24 +235,30 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 			
 		}
 		//get move in front of us
+		//NOTE THERE IS A BUG IN THIS SOMEWHERE
+		//for some reason, occasionally, this function will not return a foreward (not diagonal) move
+		//even though no opponent is in front of our player
 		if(brd.board[curRow+dir][curCol] != opp){
-			mv.endingCol = curCol;
+			
+			int endingCol = curCol;
 			//make a new state and make the move, then add it to list of moves
+			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol, endingRow, endingCol,0);
 			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
+			modifiedBrd.makeMove(mv);
+			mv.score = evalBoard(modifiedBrd);
 			modifiedBrd.makeMove(mv);
 			mv.score = evalBoard(modifiedBrd);
 			if(brd.moveOK(mv)){
 				System.out.println("row: "+(curRow+dir)+ " col: "+ (curCol));
 				listofMoves.add(mv);
 			}
-			else{
-				System.out.println("error checking for next moves. look in getNextMoves()");
-			}
 		}
 		//get move in front and to the right
 		if(curCol != 7){
-			mv.endingCol = curCol+1;
+
+			int endingCol = curCol+1;
 			//make a new state and make the move, then add it to list of moves
+			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol, endingRow, endingCol,0);
 			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
 			modifiedBrd.makeMove(mv);
 			mv.score = evalBoard(modifiedBrd);
@@ -252,10 +266,8 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 				System.out.println("row: "+(curRow+dir)+ " col: "+ (curCol+1));
 				listofMoves.add(mv);
 			}
-			else{
-				System.out.println("error checking for next moves. look in getNextMoves()");
-			}
 		}
+		//shouldnt ever happen, as we should always have at least one move
 		if(listofMoves.isEmpty()){
 			return null;
 		}
@@ -273,7 +285,8 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		return mvStack[0];
 	}
 
-	//evaluation of the board
+	//evaluation of the board (home players - away)
+	//I believe this works, but PLEASE TEST THIS FUNCTION TO BE SURE
 	public static int evalBoard(BreakthroughState brd)
 	{ 
 		int score = eval(brd, BreakthroughState.homeSym) - eval(brd, BreakthroughState.awaySym);
@@ -284,13 +297,13 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		return score;
 	}
 
-	//evaluation 
+	//count up all the players on the board on a team
 	private static int eval(BreakthroughState brd, char who)
 	{
 		int cnt = 0;
 		for (int r=0; r<brd.N-1; r++) {
 			for (int c=0; c<brd.N-1; c++) {
-				if(brd.board[r][c] == who){ //NOTE: Grant's Edits: i dont know if this works for sure. 
+				if(brd.board[r][c] == who){
 					//my goal is to count up the total of that player and return that #
 					cnt++;
 				}
@@ -303,7 +316,10 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 	{
 		//TODO: CHANGE DEPTH LIMIT BASED ON TIME
 		GamePlayer p = new TeamA01BreakthroughPlayer("team A01 BT+",3);
+		//UNCOMMENT BELOW TO TURN THE GAME BACK INTO A COMPETITIVE GAME
 		//p.compete(args);
+		
+		//MAKES THE GAME A PUZZLE SOLVE
 		p.solvePuzzles(new String [] { "BTPuzzle2"});
 		
 	}

@@ -58,10 +58,10 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		}
 	}
 
-	//checks if the board is solved
+	//checks if the board is complete
 	protected boolean terminalValue(BreakthroughState brd, ScoredBreakthroughMove mv) {
 		GameState.Status status = brd.getStatus();
-		boolean isTerminal = true;
+		boolean isTerminal = false;
 
 		for(int j=0; j<brd.N-1;j++){
 			if(brd.board[0][j]=='B'){
@@ -111,23 +111,34 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 		return safe;
 	}
 
+	private void undoMove(BreakthroughState brd, int r, int c){
+
+	}
+
 	private void alphaBeta(BreakthroughState brd, int currDepth,
 			double alpha, double beta)
 	{
+		
+		//System.out.println("eval: "+ evalBoard(brd));
+		
 		boolean toMaximize = (brd.getWho() == GameState.Who.HOME);
 		boolean toMinimize = !toMaximize;
 
 		boolean isTerminal = terminalValue(brd, mvStack[currDepth]);
-
+		
+		//if were at a terminal state (someone won)
 		if (isTerminal) {
-			;
+			//neg = -1 or 1 based on if were home or not
+			int neg = toMaximize ? 1: -1;
+			mvStack[currDepth].set(0,0,0,0, 999*neg);
+			return;
 			//if were at the depth, start building the "tree" of evaluation functions (done searching, 
-		} else if (currDepth == depthLimit) {
-			mvStack[currDepth].set(0, evalBoard(brd));
+		}  else if (currDepth == depthLimit) {
 			// else end recursion; its time to start comparing to pick a best move
+			mvStack[currDepth].set(0,0,0,0, evalBoard(brd));
 		} else {
-			//minimax stuff: make a temp move as our possible solution?
-			ScoredBreakthroughMove tempMv = new ScoredBreakthroughMove();
+			//: make a temp move as our possible solution?
+			//ScoredBreakthroughMove tempMv = new ScoredBreakthroughMove();
 
 			//set our best score found to neg infinity if home
 			double bestScore = (toMaximize ? 
@@ -135,51 +146,50 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 			ScoredBreakthroughMove bestMove = mvStack[currDepth];
 			ScoredBreakthroughMove nextMove = mvStack[currDepth+1];
 
-			bestMove.set(0, bestScore);
+			bestMove.set(0,0,0,0, bestScore);
 			GameState.Who currTurn = brd.getWho();
-
-
+			
+			char me = brd.who == GameState.Who.HOME ?
+					BreakthroughState.homeSym : BreakthroughState.awaySym;
+			System.out.println("me "+me);
 			//shuffle(columns); //we got rid of this function, do we actually need it?
 			// iterate through all the positions on the board to check for our p
 			for (int r=0; r<brd.N-1; r++) {
 				for(int c=0; c<brd.N-1; c++){
-					if (brd.board[r][c] == currTurn) {   // if we found one of our players
+					if (brd.board[r][c] == me) {   // if we found one of our players
+						BreakthroughState oldBrd = brd;
+						//get the moves possible at this location
+						ArrayList<ScoredBreakthroughMove> listofMoves = getNextMoves(brd,r,c);
+						for(ScoredBreakthroughMove move : listofMoves){
+							System.out.println(brd.toString());
+							brd.makeMove(move);
 
+							alphaBeta(brd, currDepth+1, alpha, beta);  // Check out move
 
+							// Undo move
+							brd.board = oldBrd.board;
+							brd.numMoves--;
+							brd.status = GameState.Status.GAME_ON;
+							brd.who = currTurn;
 
-						tempMv.startRow = 0;
-						tempMv.startCol =0;
-						tempMv.endingRow = 0;				// initialize move
-						tempMv.endingCol = 0;
-						brd.makeMove(tempMv);
-
-						alphaBeta(brd, currDepth+1, alpha, beta);  // Check out move
-
-						// Undo move
-						brd.numInCol[c]--;
-						int row = brd.numInCol[c]; 
-						brd.board[r][c] = BreakthroughState.emptySym;
-						brd.numMoves--;
-						brd.status = GameState.Status.GAME_ON;
-						brd.who = currTurn;
-
-						// if max, test next move to see if higher than our current best, if min, test next move to see if lower than best
-						if (toMaximize && nextMove.score > bestMove.score) {
-							bestMove.set(nextMove.startRow,nextMove.startCol, nextMove.endingRow,nextMove.endingCol, nextMove.score);
-						} else if (!toMaximize && nextMove.score < bestMove.score) {
-							bestMove.set(nextMove.startRow,nextMove.startCol, nextMove.endingRow,nextMove.endingCol, nextMove.score);
-						}
-
-						// Update alpha and beta. Perform pruning, if possible.
-						if (toMinimize) {
-							beta = Math.min(bestMove.score, beta);
-							if (bestMove.score <= alpha || bestMove.score == -MAX_SCORE) {
-								return;
+							// if max, test next move to see if higher than our current best, if min, test next move to see if lower than best
+							if (toMaximize && nextMove.score > bestMove.score) {
+								bestMove.set(nextMove.startRow,nextMove.startCol, nextMove.endingRow,nextMove.endingCol, nextMove.score);
+							} else if (!toMaximize && nextMove.score < bestMove.score) {
+								bestMove.set(nextMove.startRow,nextMove.startCol, nextMove.endingRow,nextMove.endingCol, nextMove.score);
 							}
-						} else {
-							alpha = Math.max(bestMove.score, alpha);
-							if (bestMove.score >= beta || bestMove.score == MAX_SCORE) {
-								return;
+
+							// Update alpha and beta. Perform pruning, if possible.
+							if (toMinimize) {
+								beta = Math.min(bestMove.score, beta);
+								if (bestMove.score <= alpha || bestMove.score == -MAX_SCORE) {
+									return;
+								}
+							} else {
+								alpha = Math.max(bestMove.score, alpha);
+								if (bestMove.score >= beta || bestMove.score == MAX_SCORE) {
+									return;
+								}
 							}
 						}
 					}
@@ -189,13 +199,68 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 	}
 
 	//returns a list of scoredBreakthroughMoves
-	public ScoredBreakthroughMove[] getNextMoves(BreakthroughState brd, int curRow, int curCol){
-		
-		for(int j=0;j<2;j++){
-			if(){
-				
+	public ArrayList<ScoredBreakthroughMove> getNextMoves(BreakthroughState brd, int curRow, int curCol){
+		System.out.println("current spot: row: "+curRow+ " col: "+ curCol);
+		ArrayList<ScoredBreakthroughMove> listofMoves = new ArrayList<>();
+		char me = brd.who == GameState.Who.HOME ?
+				BreakthroughState.homeSym : BreakthroughState.awaySym;
+		char opp = brd.who == GameState.Who.HOME ?
+				BreakthroughState.awaySym : BreakthroughState.homeSym;
+		int dir = brd.who == GameState.Who.HOME ? +1 : -1;
+		ScoredBreakthroughMove mv = new ScoredBreakthroughMove();
+		mv.startCol = curCol;
+		mv.startRow = curRow;
+		mv.endingRow = curRow+dir;
+		//get move in front and to the left of us
+		if(curCol != 0){
+			mv.endingCol = curCol-1;
 
+			//make a new state and make the move, then add it to list of moves
+			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
+			modifiedBrd.makeMove(mv);
+			mv.score = evalBoard(modifiedBrd);
+			//check if next move is ok before adding 
+			if(brd.moveOK(mv)){
+				System.out.println("row: "+(curRow+dir)+ " col: "+ (curCol-1));
+				listofMoves.add(mv);
 			}
+			
+		}
+		//get move in front of us
+		if(brd.board[curRow+dir][curCol] != opp){
+			mv.endingCol = curCol;
+			//make a new state and make the move, then add it to list of moves
+			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
+			modifiedBrd.makeMove(mv);
+			mv.score = evalBoard(modifiedBrd);
+			if(brd.moveOK(mv)){
+				System.out.println("row: "+(curRow+dir)+ " col: "+ (curCol));
+				listofMoves.add(mv);
+			}
+			else{
+				System.out.println("error checking for next moves. look in getNextMoves()");
+			}
+		}
+		//get move in front and to the right
+		if(curCol != 7){
+			mv.endingCol = curCol+1;
+			//make a new state and make the move, then add it to list of moves
+			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
+			modifiedBrd.makeMove(mv);
+			mv.score = evalBoard(modifiedBrd);
+			if(brd.moveOK(mv)){
+				System.out.println("row: "+(curRow+dir)+ " col: "+ (curCol+1));
+				listofMoves.add(mv);
+			}
+			else{
+				System.out.println("error checking for next moves. look in getNextMoves()");
+			}
+		}
+		if(listofMoves.isEmpty()){
+			return null;
+		}
+		else{
+			return listofMoves;
 		}
 	}
 
@@ -238,7 +303,9 @@ public class TeamA01BreakthroughPlayer extends GamePlayer {
 	{
 		//TODO: CHANGE DEPTH LIMIT BASED ON TIME
 		GamePlayer p = new TeamA01BreakthroughPlayer("team A01 BT+",3);
-		p.compete(args);
+		//p.compete(args);
+		p.solvePuzzles(new String [] { "BTPuzzle2"});
+		
 	}
 
 }

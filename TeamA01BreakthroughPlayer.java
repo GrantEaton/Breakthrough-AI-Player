@@ -186,8 +186,8 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 						for(ScoredBreakthroughMove move : listOfMoves)
 						{
 							boolean made = brd.makeMove(move);
-							System.out.println("Made: " + made);
-							System.out.println(" Depth: "+currDepth);
+							System.out.println("Made: " + made+ " Depth: "+currDepth);
+							printMvStack(mvStack);
 							alphaBeta(brd, currDepth+1, alpha, beta);
 							
 							brd = (BreakthroughState)oldBrd.clone();
@@ -213,6 +213,14 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 							}
 						}
 					}
+		}
+	}
+	
+	public void printMvStack(ScoredBreakthroughMove[] mvStack){
+		System.out.println("STACK:");
+		for(int i = 0; i < 6; i++){
+			
+			System.out.println(i +"." + " row: "+(mvStack[i].endingRow)+ " col: "+ (mvStack[i].endingCol) + " score: "+ mvStack[i].score);
 		}
 	}
 	

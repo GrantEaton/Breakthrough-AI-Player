@@ -115,7 +115,11 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
 			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
-			listOfMoves.add(mv);
+			
+			if(brd.moveOK(mv))
+				listOfMoves.add(mv);
+			else
+				System.out.println("Illegal Move: " + mv.toString());
 		}
 		
 		if(brd.board[endingRow][startCol] == BreakthroughState.emptySym)
@@ -125,7 +129,11 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
 			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
-			listOfMoves.add(mv);
+			
+			if(brd.moveOK(mv))
+				listOfMoves.add(mv);
+			else
+				System.out.println("Illegal Move: " + mv.toString());
 		}
 		
 		if(startCol != brd.N-1 && brd.board[endingRow][startCol+1] != me)
@@ -135,7 +143,11 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
 			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
-			listOfMoves.add(mv);
+
+			if(brd.moveOK(mv))
+				listOfMoves.add(mv);
+			else
+				System.out.println("Illegal Move: " + mv.toString());
 		}
 		
 		return listOfMoves;
@@ -188,7 +200,8 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 								bestMove.endingRow = move.endingRow;
 								bestMove.endingCol = move.endingCol;
 								bestMove.score = nextMove.score;
-							} else if (!toMaximize && nextMove.score < bestMove.score) {
+							}
+							else if (!toMaximize && nextMove.score < bestMove.score) {
 								bestMove.startRow = move.startRow;
 								bestMove.startCol = move.startCol;
 								bestMove.endingRow = move.endingRow;
@@ -227,6 +240,6 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 		int depth = 2;
 		GamePlayer p = new TeamA01BreakthroughPlayer("team A01 BT+",depth);
 		p.compete(args);
-		//p.solvePuzzles(new String [] {"BTPuzzle2"});
+		//p.solvePuzzles(new String [] {"BTPuzzle1"});
 	}
 }

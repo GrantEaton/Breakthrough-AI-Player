@@ -84,6 +84,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 	public static int evalBoard(BreakthroughState brd)
 	{
 		int score = eval(brd, BreakthroughState.homeSym) - eval(brd, BreakthroughState.awaySym);
+		
 		if(Math.abs(score) >= MAX_SCORE)
 		{
 			System.err.println("Problem with eval");
@@ -94,7 +95,8 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 	
 	public ArrayList<ScoredBreakthroughMove> getNextMoves(BreakthroughState brd, int r, int c)
 	{
-		System.out.println("Looking for moves from: row: "+r+ " col: "+ c);
+		System.out.println("Looking for moves from: row: "+r+ " col: "+ c + " on board: ");
+		System.out.println(brd.toString());
 		ArrayList<ScoredBreakthroughMove> listOfMoves = new ArrayList<>();
 		
 		char me = brd.who == GameState.Who.HOME ?
@@ -115,7 +117,10 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
-			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
+			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
+  			modifiedBrd.makeMove(mv);
+  			mv.score = evalBoard(modifiedBrd)*dir;
+			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol) + " score: "+ mv.score);
 			listOfMoves.add(mv);
 		}
 		
@@ -125,7 +130,10 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
-			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
+			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
+  			modifiedBrd.makeMove(mv);
+  			mv.score = evalBoard(modifiedBrd)*dir;
+			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol)+ " score: "+ mv.score);
 			listOfMoves.add(mv);
 		}
 		
@@ -135,7 +143,10 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
-			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
+			BreakthroughState modifiedBrd = (BreakthroughState) brd.clone();
+  			modifiedBrd.makeMove(mv);
+  			mv.score = evalBoard(modifiedBrd)*dir;
+			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol) + " score: "+ mv.score);
 			listOfMoves.add(mv);
 		}
 		
@@ -165,7 +176,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			
 			char me = brd.who == GameState.Who.HOME ?
 					BreakthroughState.homeSym : BreakthroughState.awaySym;
-			
+			System.out.println("Turn: "+ me);
 			for(int r = 0; r < brd.N; r++)
 				for(int c = 0; c < brd.N; c++)
 					if(brd.board[r][c] == me)
@@ -176,6 +187,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 						{
 							boolean made = brd.makeMove(move);
 							System.out.println("Made: " + made);
+							System.out.println(" Depth: "+currDepth);
 							alphaBeta(brd, currDepth+1, alpha, beta);
 							
 							brd = (BreakthroughState)oldBrd.clone();
@@ -216,7 +228,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 	{
 		int depth = 6;
 		GamePlayer p = new TeamA01BreakthroughPlayer("team A01 BT+",depth);
-		p.compete(args);
-		//p.solvePuzzles(new String [] {"BTPuzzle1"});
+		//p.compete(args);
+		p.solvePuzzles(new String [] {"BTPuzzle1"});
 	}
 }

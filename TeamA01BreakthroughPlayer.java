@@ -79,9 +79,37 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 		return cnt;
 	}
 	
-	public static int evalBoard(BreakthroughState brd)
+
+	/* 
+	 * returns an int representing the number of rows a piece is from the beginning
+	 */
+	private static int eval2(BreakthroughState brd, char who) {
+		// We make our way up the board (starting at row 0) looking for a black piece
+		if(who == 'B') {
+			for(int r = 0; r < brd.N; r++)
+				for(int c = 0; c < brd.N; c++)
+					if(brd.board[r][c] == who)
+						return (brd.N - r) - 1;
+		}
+		
+		// We make our way down the board (starting at the top row) looking for a white piece
+		else if(who == 'W') {
+			for(int r = brd.N - 1; r > 0; r--)
+				for(int c = 0; c < brd.N; c++)
+					if(brd.board[r][c] == who)
+						return r;
+		}
+		// if no piece is found for 'who'
+		return -1;
+	}
+	
+	public static double evalBoard(BreakthroughState brd)
 	{
-		int score = eval(brd, BreakthroughState.homeSym) - eval(brd, BreakthroughState.awaySym);
+		int score1 = eval(brd, BreakthroughState.homeSym) - eval(brd, BreakthroughState.awaySym);
+		int score2 = eval2(brd, BreakthroughState.homeSym) - eval2(brd, BreakthroughState.awaySym);
+		
+		double score = ((.75 * score1) + (.25 * score2)) * 10;
+		//System.out.println("Score: " + score);
 		if(Math.abs(score) >= MAX_SCORE)
 		{
 			System.err.println("Problem with eval");

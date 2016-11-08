@@ -5,7 +5,7 @@ import game.*;
 
 public class TeamA01BreakthroughPlayer extends GamePlayer
 {
-	public static final double MAX_SCORE = Double.POSITIVE_INFINITY;
+	public static final double MAX_SCORE = 999;
 	public final int MAX_DEPTH = 50;
 	public int depthLimit;
 	protected ScoredBreakthroughMove[] mvStack;
@@ -92,7 +92,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 	
 	public ArrayList<ScoredBreakthroughMove> getNextMoves(BreakthroughState brd, int r, int c)
 	{
-		System.out.println("Looking for moves from: row: "+r+ " col: "+ c);
+		//System.out.println("Looking for moves from: row: "+r+ " col: "+ c);
 		ArrayList<ScoredBreakthroughMove> listOfMoves = new ArrayList<>();
 		
 		char me = brd.who == GameState.Who.HOME ?
@@ -114,7 +114,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
-			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
+			//System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
 			
 			if(brd.moveOK(mv))
 				listOfMoves.add(mv);
@@ -128,7 +128,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
-			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
+			//System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
 			
 			if(brd.moveOK(mv))
 				listOfMoves.add(mv);
@@ -142,7 +142,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			
 			ScoredBreakthroughMove mv = new ScoredBreakthroughMove(startRow, startCol,
 					endingRow, endingCol, 0.0);
-			System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
+			//System.out.println("row: "+(endingRow)+ " col: "+ (endingCol));
 
 			if(brd.moveOK(mv))
 				listOfMoves.add(mv);
@@ -182,13 +182,15 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 				for(int c = 0; c < brd.N; c++)
 					if(brd.board[r][c] == me)
 					{
-						BreakthroughState newBrd = (BreakthroughState)brd.clone();
 						ArrayList<ScoredBreakthroughMove> listOfMoves = getNextMoves(brd, r, c);
 						for(ScoredBreakthroughMove move : listOfMoves)
 						{
-							System.out.println("Current Depth: " + currDepth);
+							BreakthroughState newBrd = (BreakthroughState)brd.clone();
+							//System.out.println("Current Depth: " + currDepth);
+							//System.out.println("Making " + move.toString());
 							newBrd.makeMove(move);
-							System.out.println("Made " + move.toString());
+							//System.out.println("Made " + move.toString());
+							
 							alphaBeta(newBrd, currDepth+1, alpha, beta);
 							
 							//brd = (BreakthroughState)oldBrd.clone();
@@ -237,9 +239,9 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 	
 	public static void main(String[] args)
 	{
-		int depth = 2;
+		int depth = 5;
 		GamePlayer p = new TeamA01BreakthroughPlayer("team A01 BT+",depth);
 		p.compete(args);
-		//p.solvePuzzles(new String [] {"BTPuzzle1"});
+		//p.solvePuzzles(new String [] {"BTPuzzle2"});
 	}
 }

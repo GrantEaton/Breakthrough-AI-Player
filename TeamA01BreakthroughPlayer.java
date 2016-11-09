@@ -52,6 +52,9 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 		@Override public String toString(){
 			return "row: "+row+" col: "+col;
 		}
+		public boolean equals(PlayerRxC player){
+			return player.row == row && player.col == col;
+		}
 	}
 
 	public TeamA01BreakthroughPlayer(String nname, int d)
@@ -252,13 +255,27 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 					
 					if(me == 'W'){
 						newWPlayers.remove(player);
-						newBPlayers.remove(newPlayer);
 						newWPlayers.add(newPlayer);
+						for(int j=0; j<newBPlayers.size(); j++){
+							PlayerRxC p = newBPlayers.get(j);
+							if(p.equals(newPlayer)){
+								newBPlayers.remove(p);
+								break;
+							}
+						}
+						
 					}
 					else{
 						newBPlayers.remove(player);
-						newWPlayers.remove(newPlayer);
 						newBPlayers.add(newPlayer);
+						for(int j=0; j<newWPlayers.size(); j++){
+							PlayerRxC p = newWPlayers.get(j);
+							if(p.equals(newPlayer)){
+								newWPlayers.remove(p);
+								break;
+							}
+						}
+						
 					}
 					
 					//System.out.println("Made " + move.toString());
@@ -316,7 +333,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 
 	public static void main(String[] args)
 	{
-		int depth = 6;
+		int depth = 7;
 		GamePlayer p = new TeamA01BreakthroughPlayer("team A01 BT+",depth);
 		
 		//p.compete(args);

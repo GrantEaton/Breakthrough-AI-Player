@@ -46,6 +46,9 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 			row = 0;
 			col = 0;
 		}
+		public PlayerRxC clone(PlayerRxC player){
+			return new PlayerRxC(player.row, player.col);
+		}
 		@Override public String toString(){
 			return "row: "+row+" col: "+col;
 		}
@@ -240,31 +243,30 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 				for(ScoredBreakthroughMove move : listOfMoves)
 				{
 					BreakthroughState newBrd = (BreakthroughState)brd.clone();
+					ArrayList<PlayerRxC> newWPlayers = (ArrayList<PlayerRxC>) WPlayers.clone();
+					ArrayList<PlayerRxC> newBPlayers = (ArrayList<PlayerRxC>) BPlayers.clone();
 					PlayerRxC newPlayer = new PlayerRxC(move.endingRow,move.endingCol);
 					//System.out.println("Current Depth: " + currDepth);
 					//System.out.println("Making " + move.toString());
 					newBrd.makeMove(move);
+					
 					if(me == 'W'){
-						WPlayers.remove(player);
-						WPlayers.add(newPlayer);
+						newWPlayers.remove(player);
+						newBPlayers.remove(newPlayer);
+						newWPlayers.add(newPlayer);
 					}
 					else{
-						BPlayers.remove(player);
-						BPlayers.add(newPlayer);
+						newBPlayers.remove(player);
+						newWPlayers.remove(newPlayer);
+						newBPlayers.add(newPlayer);
 					}
 					
 					//System.out.println("Made " + move.toString());
 
-					alphaBeta(newBrd, currDepth+1, alpha, beta, WPlayers, BPlayers);
+					alphaBeta(newBrd, currDepth+1, alpha, beta, newWPlayers, newBPlayers);
 					
-					if(me == 'W'){
-						WPlayers.remove(newPlayer);
-						WPlayers.add(player);
-					}
-					else{
-						BPlayers.remove(newPlayer);
-						BPlayers.add(player);
-					}
+					
+					
 					//brd = (BreakthroughState)oldBrd.clone();
 
 					// Check out the results, relative to what we've seen before
@@ -317,7 +319,7 @@ public class TeamA01BreakthroughPlayer extends GamePlayer
 		int depth = 6;
 		GamePlayer p = new TeamA01BreakthroughPlayer("team A01 BT+",depth);
 		
-		p.compete(args);
-		//p.solvePuzzles(new String [] {"BTPuzzle2"});
+		//p.compete(args);
+		p.solvePuzzles(new String [] {"BTPuzzle2"});
 	}
 }
